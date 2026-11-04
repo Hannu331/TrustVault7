@@ -1,0 +1,22 @@
+:root{--bg:#e9edf0;--panel:#fbfcfc;--ink:#12202b;--muted:#566876;--line:#c9d3da;--steel:#24465e;--ok:#1d7a58;--warn:#b4570d;--bad:#a6283a;
+--serif:Georgia,"Times New Roman",serif;--sans:system-ui,-apple-system,"Segoe UI",Roboto,sans-serif}
+@media(prefers-color-scheme:dark){:root{--bg:#0f1a22;--panel:#16252f;--ink:#e6edf2;--muted:#94a8b6;--line:#2c414f;--steel:#7fb2d4;--ok:#52c79a;--warn:#e8963f;--bad:#f07a8a}}
+*{box-sizing:border-box}body{margin:0;background:var(--bg);color:var(--ink);font:15px/1.5 var(--sans)}
+header{display:flex;gap:1rem;align-items:center;padding:.8rem 1.2rem;background:var(--steel);color:#fff;flex-wrap:wrap}
+header h1{font:600 1.35rem var(--serif);margin:0;margin-right:auto;letter-spacing:.01em}
+header button{background:transparent;color:#fff;border-color:#ffffff66}
+main{max-width:1100px;margin:1.2rem auto;padding:0 1rem;display:grid;gap:1rem}
+section{background:var(--panel);border:1px solid var(--line);border-radius:6px;padding:1rem 1.1rem;overflow-x:auto}
+h2{font:600 1.15rem var(--serif);margin:0 0 .7rem}
+table{border-collapse:collapse;width:100%}th,td{text-align:left;padding:.4rem .5rem;border-bottom:1px solid var(--line);vertical-align:top}
+th{color:var(--muted);font-weight:600;font-size:.85rem}
+input,select,button{font:inherit;padding:.4rem .6rem;border:1px solid var(--line);border-radius:4px;background:var(--panel);color:var(--ink)}
+button{cursor:pointer;background:var(--steel);color:#fff;border-color:var(--steel)}button.ghost{background:transparent;color:var(--steel)}
+button.danger{background:var(--bad);border-color:var(--bad)}
+:focus-visible{outline:3px solid var(--warn);outline-offset:2px}
+form,.row{display:flex;gap:.5rem;flex-wrap:wrap;align-items:center;margin:.4rem 0}
+.tag{display:inline-block;padding:0 .45rem;border-radius:3px;font-size:.8rem;border:1px solid currentColor}
+.ok{color:var(--ok)}.denied{color:var(--bad)}.error{color:var(--warn)}.muted{color:var(--muted)}
+#msg{position:sticky;top:0;padding:.5rem 1.2rem;font-weight:600}#msg.err{background:var(--bad);color:#fff}#msg.good{background:var(--ok);color:#fff}
+.login{max-width:340px;margin:12vh auto;background:var(--panel);padding:1.5rem;border:1px solid var(--line);border-radius:6px}
+.login form{flex-direction:column;align-items:stretch}
