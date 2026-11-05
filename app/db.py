@@ -30,6 +30,9 @@ def init() -> None:
     os.makedirs(STORE, exist_ok=True)
     c = connect()
     c.executescript(SCHEMA_FILE.read_text())
+    columns = {row["name"] for row in c.execute("PRAGMA table_info(users)")}
+    if "must_change_password" not in columns:  # database made before this column existed
+        c.execute("ALTER TABLE users ADD COLUMN must_change_password INTEGER NOT NULL DEFAULT 0")
     c.close()
 
 

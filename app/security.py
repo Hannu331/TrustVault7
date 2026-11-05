@@ -58,6 +58,9 @@ def record_fail(ip: str, username: str) -> None:
     FAILS.setdefault((ip, username.lower()), []).append(time.time())
 
 
+PASSWORD_CHANGE_PATHS = {"/api/auth/me", "/api/auth/password", "/api/auth/logout"}
+
+
 def _refuse_unauthenticated(request: Request, conn):
     """A refused attempt must still leave a record, even when nobody is signed in."""
     match = re.match(r"/api/documents/(\d{1,9})", request.url.path)
@@ -87,6 +90,8 @@ def current_user(request: Request, conn=Depends(db.get_db)):
     ).fetchone()
     if not row:
         _refuse_unauthenticated(request, conn)
+    if row["must_change_password"] and request.url.path not in PASSWORD_CHANGE_PATHS:
+        raise HTTPException(403, "You must change your temporary password first")
     return row
 
 
