@@ -1,0 +1,55 @@
+# THREATS
+"Test" names are in `tests/test_access.py`. Status: Closed / Reduced / Accepted.
+
+| # | Threat | What I did | Test | Status |
+|---|---|---|---|---|
+| T1 | IDOR: guess another document id on any route | Every document route calls `authorize()`; no lookup by id alone | `test_stranger_cannot_use_any_document_route` | Closed |
+| T2 | Unauthenticated / forged token | Opaque 256-bit tokens, hash stored, DB lookup every request | `test_unauthenticated_and_garbage_tokens` | Closed |
+| T3 | Direct file or database fetch via static route or path tricks | Blobs stored outside web root under random names; static mount is only `app/static` | `test_no_direct_file_access_via_static_or_paths` | Closed |
+| T4 | 403 vs 404 reveals a document exists | One 404 for missing and forbidden | `test_missing_and_forbidden_look_identical` | Closed |
+| T5 | Read grant used to edit, delete or re-share; viewer given edit | Separate actions; owner-only actions; role gate on edit | `test_read_grant_cannot_edit_delete_or_share`, `test_viewer_cannot_upload_or_be_given_edit` | Closed |
+| T6 | Revoked user keeps access (old token, cached page) | No JWTs or signed URLs; grant, active flag and role re-read per request; sessions deleted on user change | `test_revoke_grant_takes_effect_on_next_request`, `test_disabling_user_kills_existing_token`, `test_session_dies_when_role_changes`, `test_logout_invalidates_token` | Closed (not for bytes already downloaded) |
+| T7 | Deleted document still fetchable by grantees | `deleted_at` checked inside `authorize()` | `test_deleted_document_unreachable_even_for_grantees` | Closed |
+| T8 | Search leaks titles, owners or counts of unauthorised docs | Access rule is in the SQL `WHERE`; LIKE wildcards escaped; params bound; dates validated | `test_search_returns_only_accessible_documents`, `test_search_filters_and_like_wildcards_and_sql_injection` | Closed |
+| T9 | Admin reads content | Admin refused in `authorize()` and returns nothing from search | `test_admin_cannot_read_or_search_content` | Closed, but see T17 |
+| T10 | Stale grant after role change (grantee promoted to admin; owner promoted to admin) | `authorize()` re-checks role, independent of ownership/grant rows | `test_grantee_promoted_to_admin_loses_content_access`, `test_promoted_admin_who_still_owns_documents_cannot_read_them` | Closed |
+| T11 | Privilege escalation / mass assignment | Pydantic `extra="forbid"`; role changes admin-only; admin cannot edit self | `test_mass_assignment_rejected`, `test_non_admin_cannot_reach_admin_endpoints`, `test_cannot_grant_to_admin_or_self` | Closed |
+| T12 | Disabled flag bypassed if session deletion fails | Session query also requires `active=1` | `test_disabled_flag_alone_blocks_token_even_if_sessions_survive` | Closed |
+| T13 | Upload abuse: HTML/SVG XSS, MIME spoofing, empty/oversized, NUL bytes | Extension allow-list + magic bytes, 10 MB streamed cap, fixed served content-type, `attachment` + `nosniff`, CSP | `test_upload_validation` | Reduced |
+| T14 | Path traversal via filename | Storage key is server-generated hex (asserted); name sanitised, kept as metadata only | `test_filename_traversal_is_neutralised` | Closed |
+| T15 | Audit altered or deleted | Append-only triggers + hash chain + verification; refused attempts also recorded | `test_audit_cannot_be_updated_or_deleted`, `test_audit_chain_detects_tampering_by_someone_who_drops_the_trigger`, `test_audit_records_successes_and_refusals` | Reduced: see Accepted A1 |
+| T16 | Stored file swapped on disk | SHA-256 recorded at write, verified at every download, failure audited | `test_tampered_blob_is_detected` | Closed (detects, does not repair) |
+| T17 | Brute force login / username enumeration | 5 failures per 15 min per IP+username, constant-time dummy hash for unknown users | `test_login_lockout_after_repeated_failures` | Reduced: A3 |
+| T18 | Stored XSS via filenames in the UI | Frontend builds DOM with `textContent` only; CSP `default-src 'self'` | (manual) | Reduced |
+| T19 | CSRF | Bearer header in `fetch`, no cookies, so browsers never attach credentials automatically | structural | Closed |
+| T20 | Login throttle is per process | In-memory counters | none | Accepted A3 |
+| T21 | Refused attempts left no record when nobody was signed in or the role was wrong (found in my own second review) | `unauthenticated_refused` and `role_refused` are audited with IP, method, path and document id | `test_unauthenticated_attempt_on_a_document_is_audited`, `test_role_refusals_are_audited` | Closed |
+| T22 | Huge or odd ids crashed the server with a 500 (found in my own second review) | Path ids bounded 1 to 2^31-1; unmatched ids give 422 | `test_huge_or_odd_ids_never_cause_a_server_error` | Closed |
+| T23 | API schema and `/docs` published to strangers | Disabled; documented in `docs/API.md` | `test_api_docs_and_schema_are_not_published` | Closed |
+| T24 | Newest audit records deleted: the chain still verifies | Admin saves an anchor (latest record number and hash); verification with the anchor fails if records are missing | `test_anchor_detects_deletion_of_newest_audit_records` | Reduced: only if someone actually saved an anchor |
+| T25 | App breaks or serves wrong files when started from another folder | Paths are resolved from the project root, not the working directory | `test_schema_file_builds_the_database` | Closed |
+| T26 | Clickjacking, MIME sniffing, downgrade to HTTP | `X-Frame-Options: DENY`, `nosniff`, `Strict-Transport-Security`, no CORS configured (same origin only) | (headers set in one middleware) | Reduced: HTTPS itself must come from the host |
+| T27 | Browser or proxy caches a document after logout | `Cache-Control: no-store` on every `/api` response | (middleware) | Closed |
+| T28 | Spreadsheet formula injection from downloaded CSV/XLSX | Files are served as attachments, never rendered or edited by the server | none | Accepted A13 |
+| T30 | Temporary or leaked password stays in use; stolen token used to guess the current password | Admin-created and admin-reset accounts can only change their password until they do; change needs the current password, is throttled and audited; success ends every session | `test_new_account_must_change_temporary_password_before_anything_else`, `test_admin_password_reset_forces_a_new_change`, `test_password_change_needs_current_password_and_is_throttled_and_audited`, `test_changing_password_ends_all_sessions_and_old_password_stops_working` | Closed |
+| T31 | Default or published credentials on the real deployment | No default accounts exist: the first admin comes from host-side secrets only when none exists; demo data only with `TV_DEMO=1`; start fails if no admin | `test_first_admin_bootstrap_runs_once_and_rejects_weak_passwords`, `test_demo_buttons_only_when_demo_flag_is_set` | Closed |
+| T32 | Data loss or half-copied backup | Backup uses SQLite's online backup API plus the files; database upgrades itself | `test_backup_contains_database_and_files`, `test_old_database_gets_the_new_column_on_startup` | Reduced: restores must be tested by the operator |
+| T29 | Sequential document ids let people probe for documents | Probing gets the same 404 as a missing document, and every probe is audited, so a sweep shows up as a refusal cluster in the admin overview | `test_missing_and_forbidden_look_identical` | Reduced |
+
+## Accepted (knowingly)
+- **A1 Audit rewrite by a privileged insider.** (Partly reduced by the saved anchor, T24.) Triggers can be dropped by anyone with DB write access and the whole chain can be recomputed. Partial edits are detected; a full rewrite is not. Fix I did not build: publish the head hash to a place the app cannot write (daily email, object store with retention lock). With Postgres I would also use a role without UPDATE/DELETE.
+- **A2 Administrator impersonation.** An admin can reset a user's password and log in as them. It is audited (`user_changed`, `password_reset`) and shows in the admin view, but it is not prevented. Real fix: no admin password reset, only an emailed reset link, or two-person approval.
+- **A3 Throttle weaknesses.** Counters live in memory (reset on restart, not shared across instances). Behind a proxy every client shares one IP, so an attacker can lock out a named user. I did not trust `X-Forwarded-For`.
+- **A4 Session token in `sessionStorage`.** An XSS bug would expose it. I avoided cookies to remove CSRF; CSP and `textContent` reduce XSS chance. HttpOnly cookie plus CSRF token is the alternative.
+- **A5 Race on revoke.** A download already streaming when access is removed completes. The window is one request. Bytes already saved cannot be recalled by any system.
+- **A6 No encryption at rest, no malware scan, no zip-bomb defence beyond never opening archives server-side.** Recipients' viewers still open DOCX/XLSX.
+- **A7 Orphans and retention.** Demoting an owner leaves their documents owned but unmanageable until promoted back; no ownership transfer. Soft-deleted blobs are kept forever; no retention or purge.
+- **A8 Edit-grant holders can replace content** and the old version is not kept (the replacement and both hashes are audited).
+- **A9 Audit contains filenames and search text**, which may be sensitive; admins can read them.
+- **A10 Login-failure audit flooding.** Unauthenticated failures are logged without a global rate limit.
+- **A11 Multipart bodies are buffered by the framework** before my size check; a Content-Length guard catches honest oversize requests only.
+- **A13 Spreadsheet formulas in CSV/XLSX** open in the recipient's program; I do not sanitise file content.
+- **A14 No emailed password-reset link.** Users change their own password when signed in, but a forgotten password still needs an administrator (see A2).
+- **A15 Unauthenticated refusals are logged with no global rate limit**, so a flood can bloat the log (see A10).
+- **A12 Owners can list all non-admin usernames** (needed to share). Username enumeration among staff.
+- **A16 Backups hold documents unencrypted**, and the first admin's password sits in the host's environment settings, visible to anyone with access to that hosting account. Protect both accounts with MFA.
