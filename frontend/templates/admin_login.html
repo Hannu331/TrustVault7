@@ -1,0 +1,191 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+
+    <meta charset="UTF-8">
+
+    <meta
+        name="viewport"
+        content="width=device-width, initial-scale=1.0"
+    >
+
+    <title>Administrator Login - TrustVault</title>
+
+    <link
+        rel="stylesheet"
+        href="/static/css/style.css"
+    >
+
+    <style>
+
+        body {
+            margin: 0;
+            min-height: 100vh;
+            background: #f6f7fb;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-family: Arial, sans-serif;
+        }
+
+        .auth-container {
+            width: 420px;
+            background: white;
+            padding: 40px;
+            border-radius: 14px;
+            box-shadow: 0 10px 35px rgba(0, 0, 0, 0.08);
+        }
+
+        .auth-logo {
+            text-align: center;
+            margin-bottom: 30px;
+        }
+
+        .auth-logo h1 {
+            margin: 0;
+            color: #192238;
+        }
+
+        .auth-logo p {
+            color: #7b8497;
+        }
+
+        .form-group {
+            margin-bottom: 18px;
+        }
+
+        .form-group label {
+            display: block;
+            margin-bottom: 7px;
+            font-weight: 600;
+            color: #192238;
+        }
+
+        .form-group input {
+            width: 100%;
+            box-sizing: border-box;
+            padding: 12px;
+            border: 1px solid #dfe3ec;
+            border-radius: 8px;
+            font-size: 15px;
+        }
+
+        .admin-btn {
+            width: 100%;
+            padding: 13px;
+            border: none;
+            border-radius: 8px;
+            background: #192238;
+            color: white;
+            font-weight: 700;
+            cursor: pointer;
+        }
+
+        .error-message {
+            background: #fff0f1;
+            color: #c34b59;
+            border: 1px solid #f0c7cc;
+            padding: 11px;
+            border-radius: 8px;
+            margin-bottom: 18px;
+        }
+
+        .back-link {
+            text-align: center;
+            margin-top: 20px;
+        }
+
+        .back-link a {
+            color: #4b5fe3;
+            text-decoration: none;
+            font-weight: 600;
+        }
+
+    </style>
+
+</head>
+
+
+<body>
+
+    <div class="auth-container">
+
+        <div class="auth-logo">
+
+            <h1>TrustVault</h1>
+
+            <p>Administrator Login</p>
+
+        </div>
+
+
+        {% if error %}
+
+        <div class="error-message">
+            {{ error }}
+        </div>
+
+        {% endif %}
+
+
+        <form
+            method="post"
+            action="/admin/login"
+        >
+
+            <div class="form-group">
+
+                <label>
+                    Administrator Username
+                </label>
+
+                <input
+                    type="text"
+                    name="username"
+                    placeholder="Enter administrator username"
+                    required
+                >
+
+            </div>
+
+
+            <div class="form-group">
+
+                <label>
+                    Password
+                </label>
+
+                <input
+                    type="password"
+                    name="password"
+                    placeholder="Enter administrator password"
+                    required
+                >
+
+            </div>
+
+
+            <button
+                type="submit"
+                class="admin-btn"
+            >
+                Administrator Login
+            </button>
+
+        </form>
+
+
+        <div class="back-link">
+
+            <a href="/login">
+                Back to User Login
+            </a>
+
+        </div>
+
+    </div>
+
+</body>
+
+</html>

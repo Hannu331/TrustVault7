@@ -1,0 +1,39 @@
+<!DOCTYPE html>
+<html lang="en"><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Audit Logs - TrustVault</title><link rel="stylesheet" href="/static/css/style.css">
+<style>
+*{box-sizing:border-box}body{margin:0;background:#f6f7fb;color:#192238;font:14px Arial,sans-serif}
+.admin-layout{min-height:100vh}.admin-sidebar{width:250px;position:fixed;inset:0 auto 0 0;background:#142B5C;color:white;padding:25px 18px}
+.admin-brand{font-size:24px;font-weight:800;margin-bottom:8px}.admin-label{color:#AFC5EA;font-size:12px;margin-bottom:30px}
+.admin-nav{display:flex;flex-direction:column;gap:7px}.admin-nav a{color:#DCE7F8;text-decoration:none;padding:12px;border-radius:8px;font-weight:600}
+.admin-nav a:hover,.admin-nav a.active{background:white;color:#142B5C}.admin-logout{position:absolute;bottom:24px;left:18px;right:18px}
+.admin-logout a{display:block;text-align:center;background:#203E78;color:white;padding:12px;border-radius:8px;text-decoration:none}
+.admin-content{margin-left:250px;padding:30px;max-width:1600px}.admin-header{display:flex;justify-content:space-between;align-items:center;margin-bottom:25px}
+.admin-header h1{margin:0;font-size:27px}.muted{color:#7b8497}.admin-user,.admin-panel,.stat{background:white;border:1px solid #e8ebf2;border-radius:12px;padding:18px}
+.stats{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:15px;margin-bottom:22px}.stat span{color:#7b8497}.stat strong{display:block;font-size:28px;margin-top:10px}
+.admin-panel{margin-bottom:20px}.admin-panel h2{margin-top:0;font-size:19px}
+.table-wrap{overflow-x:auto}table{width:100%;border-collapse:collapse;white-space:nowrap}th,td{text-align:left;padding:13px;border-bottom:1px solid #edf0f5}th{background:#f6f7fb;color:#59647a;font-size:12px}td{color:#4c566d}
+.btn{display:inline-block;border:0;border-radius:6px;padding:8px 12px;background:#4b5fe3;color:white;text-decoration:none;cursor:pointer;font-weight:600}
+.btn-danger{background:#fff0f1;color:#b83e4b}.btn-secondary{background:#eef1f7;color:#344057}
+input,select{padding:10px;border:1px solid #dfe4ed;border-radius:7px;background:white;min-width:130px}
+.form-row{display:flex;gap:10px;flex-wrap:wrap;align-items:end}.form-row label{display:grid;gap:6px;color:#566176;font-weight:600}
+.notice{padding:12px;background:#fff8e8;border:1px solid #f2e6c8;border-radius:8px;color:#795e27}
+@media(max-width:900px){.stats{grid-template-columns:repeat(2,1fr)}}
+@media(max-width:650px){.admin-sidebar{width:190px}.admin-content{margin-left:190px;padding:18px}.stats{grid-template-columns:1fr}}
+</style>
+</head>
+<body><div class="admin-layout"><aside class="admin-sidebar"><div class="admin-brand">TrustVault</div>
+<div class="admin-label">ADMINISTRATOR PANEL</div><nav class="admin-nav"><a class="" href="/admin">Dashboard</a>
+<a class="" href="/admin/users">User Management</a>
+<a class="" href="/admin/documents">Documents</a>
+<a class="" href="/admin/permissions">Permissions</a>
+<a class="active" href="/admin/audit">Audit Logs</a>
+<a class="" href="/admin/profile">Profile</a></nav>
+<div class="admin-logout"><a href="/logout">Logout</a></div></aside>
+<main class="admin-content"><header class="admin-header"><div><h1>Audit Logs</h1>
+<p class="muted">TrustVault administrator workspace</p></div><div class="admin-user"><b>{{ user.name }}</b><br><small>Administrator</small></div></header>
+
+<section class="admin-panel"><h2>Security and activity history</h2><div class="table-wrap"><table><thead><tr><th>Time</th><th>Actor</th><th>Action</th><th>Target</th><th>Details</th></tr></thead><tbody>
+{% for item in audit_logs %}<tr><td>{{ item.time }}</td><td>{{ item.actor }}</td><td>{{ item.action }}</td><td>{{ item.target }}</td><td>{{ item.details }}</td></tr>
+{% else %}<tr><td colspan="5">No activity recorded yet. Events will appear here as users and administrators perform actions.</td></tr>{% endfor %}</tbody></table></div></section>
+</main></div></body></html>

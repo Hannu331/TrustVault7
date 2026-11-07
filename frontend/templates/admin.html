@@ -1,0 +1,450 @@
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+    <title>Admin Dashboard - TrustVault</title>
+
+    <link rel="stylesheet" href="/static/css/style.css">
+
+    <style>
+        .admin-layout {
+            min-height: 100vh;
+            background: #f6f7fb;
+        }
+
+        .admin-sidebar {
+            width: 250px;
+            min-height: 100vh;
+            background: #142B5C;
+            color: white;
+            padding: 25px 18px;
+            position: fixed;
+            inset: 0 auto 0 0;
+            box-sizing: border-box;
+        }
+
+        .admin-brand {
+            font-size: 24px;
+            font-weight: 800;
+            margin-bottom: 8px;
+        }
+
+        .admin-label {
+            color: #AFC5EA;
+            font-size: 13px;
+            margin-bottom: 30px;
+        }
+
+        .admin-nav {
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+        }
+
+        .admin-nav a {
+            text-decoration: none;
+            color: #DCE7F8;
+            padding: 13px 14px;
+            border-radius: 8px;
+            font-size: 14px;
+            font-weight: 600;
+        }
+
+        .admin-nav a:hover,
+        .admin-nav a.active {
+            background: white;
+            color: #142B5C;
+        }
+
+        .admin-logout {
+            position: absolute;
+            bottom: 25px;
+            left: 18px;
+            right: 18px;
+        }
+
+        .admin-logout a {
+            display: block;
+            text-align: center;
+            background: #203E78;
+            color: white;
+            padding: 12px;
+            border-radius: 8px;
+            text-decoration: none;
+        }
+
+        .admin-content {
+            margin-left: 250px;
+            padding: 30px;
+            box-sizing: border-box;
+        }
+
+        .admin-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 25px;
+        }
+
+        .admin-header h1 {
+            margin: 0;
+            color: #192238;
+            font-size: 28px;
+        }
+
+        .admin-header p {
+            color: #7b8497;
+        }
+
+        .admin-user,
+        .admin-stat,
+        .admin-panel {
+            background: white;
+            border: 1px solid #e8ebf2;
+            border-radius: 12px;
+            padding: 20px;
+        }
+
+        .admin-stats {
+            display: grid;
+            grid-template-columns: repeat(4, 1fr);
+            gap: 16px;
+            margin-bottom: 22px;
+        }
+
+        .admin-stat-title {
+            color: #7b8497;
+        }
+
+        .admin-stat-value {
+            font-size: 30px;
+            font-weight: 800;
+            margin-top: 10px;
+        }
+
+        .admin-panel {
+            margin-bottom: 20px;
+        }
+
+        .admin-panel h2 {
+            margin-top: 0;
+        }
+
+        .admin-table {
+            width: 100%;
+            border-collapse: collapse;
+        }
+
+        .admin-table th,
+        .admin-table td {
+            text-align: left;
+            padding: 13px;
+            border-bottom: 1px solid #e8ebf2;
+        }
+
+        .admin-table th {
+            background: #f6f7fb;
+        }
+
+        .view-btn {
+            display: inline-block;
+            padding: 7px 12px;
+            background: #4b5fe3;
+            color: white;
+            text-decoration: none;
+            border-radius: 6px;
+            font-size: 12px;
+            font-weight: 600;
+        }
+
+        .view-btn:hover {
+            opacity: 0.85;
+        }
+
+        @media(max-width: 900px) {
+            .admin-stats {
+                grid-template-columns: repeat(2, 1fr);
+            }
+        }
+
+        @media(max-width: 650px) {
+            .admin-sidebar {
+                width: 190px;
+            }
+
+            .admin-content {
+                margin-left: 190px;
+                padding: 18px;
+            }
+
+            .admin-stats {
+                grid-template-columns: 1fr;
+            }
+        }
+    </style>
+</head>
+
+<body>
+
+<div class="admin-layout">
+
+    <!-- ADMIN SIDEBAR -->
+
+    <aside class="admin-sidebar">
+
+        <div class="admin-brand">TrustVault</div>
+
+        <div class="admin-label">
+            ADMINISTRATOR PANEL
+        </div>
+
+        <nav class="admin-nav">
+
+            <a class="active" href="/admin">
+                Dashboard
+            </a>
+
+            <a href="/admin/users">
+                User Management
+            </a>
+
+            <a href="/admin/documents">
+                Documents
+            </a>
+
+            <a href="/admin/permissions">
+                Permissions
+            </a>
+
+            <a href="/admin/audit">
+                Audit Logs
+            </a>
+
+            <a href="/admin/profile">
+                Profile
+            </a>
+
+        </nav>
+
+        <div class="admin-logout">
+            <a href="/logout">Logout</a>
+        </div>
+
+    </aside>
+
+
+    <!-- ADMIN MAIN CONTENT -->
+
+    <main class="admin-content">
+
+        <!-- HEADER -->
+
+        <div class="admin-header">
+
+            <div>
+                <h1>Administrator Dashboard</h1>
+
+                <p>
+                    Manage users, documents, permissions and security activity.
+                </p>
+            </div>
+
+            <div class="admin-user">
+
+                <strong>{{ user.name }}</strong>
+                <br>
+
+                <span>Administrator</span>
+
+            </div>
+
+        </div>
+
+
+        <!-- STATISTICS -->
+
+        <div class="admin-stats">
+
+            <div class="admin-stat">
+
+                <div class="admin-stat-title">
+                    Total Users
+                </div>
+
+                <div class="admin-stat-value">
+                    {{ total_users }}
+                </div>
+
+            </div>
+
+
+            <div class="admin-stat">
+
+                <div class="admin-stat-title">
+                    Total Documents
+                </div>
+
+                <div class="admin-stat-value">
+                    {{ total_documents }}
+                </div>
+
+            </div>
+
+
+            <div class="admin-stat">
+
+                <div class="admin-stat-title">
+                    Active Documents
+                </div>
+
+                <div class="admin-stat-value">
+                    {{ active_documents }}
+                </div>
+
+            </div>
+
+
+            <div class="admin-stat">
+
+                <div class="admin-stat-title">
+                    Active Permissions
+                </div>
+
+                <div class="admin-stat-value">
+                    {{ total_permissions }}
+                </div>
+
+            </div>
+
+        </div>
+
+
+        <!-- DOCUMENT ACTIVITY -->
+
+        <div class="admin-panel">
+
+            <h2>Document Activity</h2>
+
+            <div style="overflow-x:auto">
+
+                <table class="admin-table">
+
+                    <thead>
+
+                        <tr>
+                            <th>Document</th>
+                            <th>Owner</th>
+                            <th>Category</th>
+                            <th>Date</th>
+                            <th>Status</th>
+                            <th>Action</th>
+                        </tr>
+
+                    </thead>
+
+                    <tbody>
+
+                        {% for document in documents %}
+
+                        <tr>
+
+                            <td>{{ document.name }}</td>
+
+                            <td>{{ document.owner }}</td>
+
+                            <td>{{ document.category }}</td>
+
+                            <td>{{ document.date }}</td>
+
+                            <td>{{ document.status }}</td>
+
+                            <td>
+                                <a
+                                    class="view-btn"
+                                    href="/admin/documents/{{ document.id }}/view">
+                                    View
+                                </a>
+                            </td>
+
+                        </tr>
+
+                        {% else %}
+
+                        <tr>
+                            <td colspan="6">
+                                No documents available.
+                            </td>
+                        </tr>
+
+                        {% endfor %}
+
+                    </tbody>
+
+                </table>
+
+            </div>
+
+        </div>
+
+
+        <!-- ADMINISTRATION SHORTCUTS -->
+
+        <div class="admin-panel">
+
+            <h2>Administration shortcuts</h2>
+
+            <p>
+                Manage user accounts, grant or revoke document access,
+                and review activity.
+            </p>
+
+            <a class="view-btn" href="/admin/users">
+                Manage Users
+            </a>
+
+            <a class="view-btn" href="/admin/permissions">
+                Manage Permissions
+            </a>
+
+            <a class="view-btn" href="/admin/audit">
+                View Audit Logs
+            </a>
+
+        </div>
+
+
+        <!-- RECENT ACTIVITY -->
+
+        <div class="admin-panel">
+
+            <h2>Recent Activity</h2>
+
+            {% for item in recent_activity %}
+
+                <p>
+                    <b>{{ item.action }}</b>
+                    — {{ item.actor }}
+                    — {{ item.target }}
+
+                    <small>
+                        ({{ item.time }})
+                    </small>
+                </p>
+
+            {% else %}
+
+                <p>No activity recorded yet.</p>
+
+            {% endfor %}
+
+        </div>
+
+    </main>
+
+</div>
+
+</body>
+</html>

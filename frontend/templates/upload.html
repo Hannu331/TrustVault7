@@ -1,0 +1,110 @@
+{% extends "base.html" %}
+
+{% block title %}Upload document | TrustVault{% endblock %}
+{% block breadcrumb %}Upload document{% endblock %}
+
+{% block content %}
+
+<div class="page-heading">
+  <div>
+    <p class="eyebrow">ADD TO YOUR LIBRARY</p>
+    <h1>Upload a document</h1>
+    <p class="muted">New files are private to you by default.</p>
+  </div>
+</div>
+
+<div class="upload-grid">
+
+  <section class="panel upload-panel">
+
+    <form id="uploadForm"
+          action="/upload"
+          method="POST"
+          enctype="multipart/form-data">
+
+      <label>
+        Category
+        <select name="category">
+          <option>General</option>
+          <option>Projects</option>
+          <option>Reports</option>
+          <option>Finance</option>
+          <option>Research</option>
+          <option>Other</option>
+        </select>
+      </label>
+
+      <label>Choose file</label>
+
+      <label class="drop-area" for="fileInput">
+        <span class="upload-icon">↑</span>
+        <b>Click to browse for a file</b>
+        <small>PDF, DOC, DOCX, TXT or CSV · Maximum 10 MB</small>
+        <span id="selectedFile" class="muted">No file selected</span>
+
+        <input
+          id="fileInput"
+          type="file"
+          name="file"
+          accept=".pdf,.doc,.docx,.txt,.csv"
+          hidden
+          required
+        >
+      </label>
+
+      <div class="form-actions">
+        <a class="button secondary" href="/documents">Cancel</a>
+        <button class="button primary" type="submit">
+          Upload document
+        </button>
+      </div>
+
+      <p id="uploadMessage" class="form-message" aria-live="polite"></p>
+
+    </form>
+  </section>
+
+  <aside class="panel side-note">
+    <span class="shield">✓</span>
+    <h3>Private by default</h3>
+    <p class="muted">
+      Only you can access a new document until you grant access to a named user.
+    </p>
+    <hr>
+    <b>Upload safety checks</b>
+    <ul>
+      <li>File type and size validation</li>
+      <li>Private storage location</li>
+      <li>Server-side permission checks</li>
+      <li>Audit event recorded</li>
+    </ul>
+  </aside>
+
+</div>
+<script>
+document.getElementById("uploadForm").addEventListener("submit", async function(event) {
+    event.preventDefault();
+
+    const form = this;
+    const message = document.getElementById("uploadMessage");
+
+    message.textContent = "Uploading...";
+
+    try {
+        const response = await fetch(form.action, {
+            method: "POST",
+            body: new FormData(form)
+        });
+
+        if (response.ok) {
+            window.location.href = "/documents";
+        } else {
+            const data = await response.json();
+            message.textContent = data.error || "Upload failed.";
+        }
+    } catch (error) {
+        message.textContent = "Something went wrong. Please try again.";
+    }
+});
+</script>
+{% endblock %}

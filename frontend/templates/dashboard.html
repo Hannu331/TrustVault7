@@ -1,0 +1,241 @@
+
+{% extends "base.html" %}
+
+{% block title %}Overview | TrustVault{% endblock %}
+
+{% block content %}
+
+<div class="page-heading">
+    <div>
+        <p class="eyebrow">YOUR SECURE WORKSPACE</p>
+        <h1>Welcome, {{ user.name }}</h1>
+        <p class="muted">Here's what's happening with your documents.</p>
+    </div>
+
+    <a class="button primary" href="/upload">
+        ＋ Upload document
+    </a>
+</div>
+
+
+<!-- DASHBOARD STATISTICS -->
+
+<div class="stats-grid">
+
+    <article class="stat-card">
+        <span>Total documents</span>
+        <strong>{{ documents|length }}</strong>
+        <small>Documents available to you</small>
+    </article>
+
+    <article class="stat-card">
+        <span>Shared with others</span>
+        <strong>
+            {{ owned_documents|length if owned_documents is defined else 0 }}
+        </strong>
+        <small>Documents you own</small>
+    </article>
+
+    <article class="stat-card">
+        <span>Shared with me</span>
+        <strong>
+            {{ shared_documents|length if shared_documents is defined else 0 }}
+        </strong>
+        <small>Documents shared with you</small>
+    </article>
+
+    <article class="stat-card">
+        <span>Recent activity</span>
+        <strong>
+            {{ recent_activity_count }}
+        </strong>
+        <small>Recorded activities</small>
+    </article>
+
+</div>
+
+
+<!-- DOCUMENTS AND ACTIVITY -->
+
+<div class="two-column">
+
+    <!-- RECENT DOCUMENTS -->
+
+    <section class="panel">
+
+        <div class="panel-heading">
+
+            <div>
+                <h2>Recent documents</h2>
+                <p class="muted">Latest files in your library.</p>
+            </div>
+
+            <a class="text-link" href="/documents">
+                View all →
+            </a>
+
+        </div>
+
+
+        <div class="table-scroll">
+
+            <table>
+
+                <thead>
+                    <tr>
+                        <th>DOCUMENT</th>
+                        <th>UPDATED</th>
+                        <th>ACCESS</th>
+                        <th>ACTION</th>
+                    </tr>
+                </thead>
+
+
+                <tbody>
+
+                    {% for document in documents %}
+
+                    <tr>
+
+                        <td>
+                            <span class="file-type pdf">FILE</span>
+                            <b>{{ document.name }}</b>
+                        </td>
+
+
+                        <td>
+                            {{ document.date }}
+                        </td>
+
+
+                        <td>
+
+                            {% if document.owner_username == user.username %}
+
+                                <span class="badge green">
+                                    Owner
+                                </span>
+
+                            {% else %}
+
+                                <span class="badge blue">
+                                    Shared
+                                </span>
+
+                            {% endif %}
+
+                        </td>
+
+
+                        <td>
+
+                            <a
+                                href="/documents/{{ document.id }}"
+                                class="button primary"
+                            >
+                                Open
+                            </a>
+
+                        </td>
+
+                    </tr>
+
+                    {% else %}
+
+                    <tr>
+                        <td colspan="4">
+                            No documents available.
+                        </td>
+                    </tr>
+
+                    {% endfor %}
+
+                </tbody>
+
+            </table>
+
+        </div>
+
+    </section>
+
+
+    <!-- RECENT ACTIVITY -->
+
+    <section class="panel">
+
+        <div class="panel-heading">
+
+            <div>
+                <h2>Recent activity</h2>
+                <p class="muted">Latest workspace events.</p>
+            </div>
+
+            <a class="text-link" href="/audit">
+                View logs →
+            </a>
+
+        </div>
+
+
+        {% if recent_activity %}
+
+            {% for activity in recent_activity %}
+
+                <div class="activity">
+
+                    <span class="activity-icon info">
+                        •
+                    </span>
+
+                    <div>
+
+                        <b>{{ activity.action }}</b>
+
+                        <p>
+                            {{ activity.details }}
+                        </p>
+
+                        <small>
+                            {{ activity.time }}
+                        </small>
+
+                    </div>
+
+                </div>
+
+            {% endfor %}
+
+        {% else %}
+
+            <div class="activity">
+
+                <span class="activity-icon info">i</span>
+
+                <div>
+                    <b>No recent activity</b>
+                    <p>Your activity will appear here.</p>
+                </div>
+
+            </div>
+
+        {% endif %}
+
+    </section>
+
+</div>
+
+
+<!-- SECURITY NOTICE -->
+
+<div class="notice">
+
+    <b>✓ Your security matters</b>
+
+    <p>
+        Document access must be verified on every server request.
+        Revoking a permission blocks subsequent requests.
+    </p>
+
+</div>
+
+{% endblock %}
