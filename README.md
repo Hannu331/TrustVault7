@@ -7,23 +7,29 @@ Python 3.12, FastAPI, SQLite, vanilla JS frontend served by the same app.
 ```bash
 python -m venv .venv && . .venv/bin/activate
 pip install -r requirements.txt
-python -m scripts.seed          # builds the database from db/schema.sql, adds demo users and 2 documents
+python -m scripts.seed          # LOCAL TRYING ONLY: demo users with published passwords. Never run on a real system
 uvicorn app.main:app --port 8000   # open http://localhost:8000
-pytest -q                        # 41 tests
+pytest -q                        # 43 tests
 python -m scripts.mutation_check # breaks 13 security checks one at a time; every one must make a test fail
 ```
 Docker: `docker build -t trustvault . && docker run -p 8000:8000 -v tv:/data trustvault`
 Deploy: any host that runs the Dockerfile (Render, Fly, Railway). Mount a persistent volume at `/data`, put it behind HTTPS, and set `TV_PW_ADMIN`, `TV_PW_ALICE`, `TV_PW_BOB`, `TV_PW_VERA` before the first start to override the demo passwords. **Run one instance only** (see THREATS T20).
 
-## Demo accounts (seed data; change on any real deployment)
-| Role | Username | Password |
-|---|---|---|
-| Administrator | admin | admin-Demo-2026! |
-| Document owner | alice | alice-Demo-2026! |
-| Document owner | bob | bob-Demo-2026! |
-| Viewer | vera | vera-Demo-2026! |
+## Live system
+**URL: https://YOUR-LIVE-URL** (production deployment, HTTPS, persistent storage, no demo mode)
 
-Try: log in as `vera`, open alice's salary letter (read granted). As `bob`, search for it: not visible. As `alice`, remove vera's access, then use vera's still-open tab: refused on the next click.
+### Evaluation access
+This repository is public, so the evaluator **passwords are not published here**. They are supplied privately with the submission (a one-page file, `evaluator-credentials.txt`, generated on the owner's own computer). There is one account per role, with strong random passwords; they **switch off automatically** on the date stated in that file (default 14 days after provisioning), so a leaked login stops working by itself. Please do not change their passwords.
+
+| Role | Username |
+|---|---|
+| Administrator | evaluator.admin |
+| Document owner | evaluator.owner |
+| Viewer | evaluator.viewer |
+
+Seed data: a second owner (`finance.owner`, nobody holds its password) owns private documents (`board-pack-q3.txt`, `salary-review-2026.txt`) that the evaluators are **not** granted, so you can try to reach them. The viewer has been given read access to `security-policy.txt`; the evaluator owner owns `supplier-contract.txt` and has shared it with the viewer.
+
+Suggested first checks: as the viewer, try to open, edit, delete or find the Finance documents by any route; as the owner, remove the viewer's access to `supplier-contract.txt` and use the viewer's already-open session; then read the refusals and the integrity banner on the administrator's Audit trail page. A scripted version: `python -m scripts.live_check URL --admin U:P --owner U:P --viewer U:P`.
 
 ## Permission model (in my words)
 Roles say what you may do in general. Grants say what you may do to one document.
@@ -40,7 +46,7 @@ Sessions are opaque random tokens whose hashes are stored server-side; there are
 Append-only table (SQLite triggers reject UPDATE/DELETE) where each record contains the SHA-256 of the previous one. Someone with raw database access could drop the triggers, but editing or deleting any row then breaks the chain, which the admin page verifies (`/api/admin/audit/verify`, tested). The chain alone cannot see the newest records being deleted, so the admin page shows a fingerprint (latest record number and hash). Save it outside the system (email it to yourself daily); checking it later detects deleted tail records (tested). Still not stopped: someone who recomputes every hash AND the saved fingerprint was never kept (THREATS A1).
 
 ## Operations (real deployment)
-Two deployments from this one repository, differing only in settings:
+Production is the default. `TV_DEMO=1` exists only for local trials. Provisioning a new production system: set the variables below, deploy, then run `python -m scripts.provision https://YOUR-URL [days]` from your own computer (it asks for your admin login, writes the evaluator passwords to a git-ignored local file, and sets them to expire). Settings:
 
 | Setting | Judge demo | Real app |
 |---|---|---|

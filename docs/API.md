@@ -20,7 +20,7 @@
 | DELETE /api/documents/{id}/grants/{user_id} | owner of doc only | Effective on next request |
 | GET /api/documents/{id}/audit | owner of doc only | |
 | GET /api/admin/users | admin | |
-| POST /api/admin/users | admin | |
+| POST /api/admin/users | admin | `{username, password, role, require_password_change}` (default true: the person must choose their own password at first sign-in; false only for shared evaluation accounts) |
 | PATCH /api/admin/users/{id} | admin (not self) | role / active / password; deletes the target's sessions |
 | GET /api/admin/audit | admin | Filters `action, outcome, actor, doc_id, limit` |
 | GET /api/admin/audit/verify | admin | Recomputes the hash chain. Optional `anchor_seq` + `anchor_hash` (a fingerprint saved earlier) also detects deleted newest records |
