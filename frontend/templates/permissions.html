@@ -1,0 +1,178 @@
+{% extends "base.html" %}
+
+{% block title %}Access management | TrustVault{% endblock %}
+{% block breadcrumb %}Access management{% endblock %}
+
+{% block content %}
+
+<div class="page-heading">
+    <div>
+        <p class="eyebrow">CONTROL ACCESS</p>
+        <h1>Access management</h1>
+        <p class="muted">Grant named users specific permissions and revoke them when needed.</p>
+    </div>
+</div>
+
+<section class="panel">
+    <div class="panel-heading">
+        <div>
+            <h2>Current permissions</h2>
+            <p class="muted">Actual permissions recorded in the database.</p>
+        </div>
+    </div>
+
+    <div class="table-scroll">
+        <table>
+            <thead>
+                <tr>
+                    <th>DOCUMENT</th>
+                    <th>OWNER</th>
+                    <th>PERSON</th>
+                    <th>PERMISSION</th>
+                    <th>ACTION</th>
+                </tr>
+            </thead>
+
+            <tbody>
+                {% for permission in permissions %}
+                <tr>
+                    <td>{{ permission.document_name }}</td>
+                    <td>{{ permission.document_owner }}</td>
+                    <td>{{ permission.username }}</td>
+                    <td>
+                        {% if permission.access == 'EDIT' %}
+                            <span class="badge purple">EDIT</span>
+                        {% else %}
+                            <span class="badge blue">READ</span>
+                        {% endif %}
+                    </td>
+                    <td>
+                        {% if can_manage %}
+                        <form method="POST" action="/admin/permissions/revoke"
+                              onsubmit="return confirm('Revoke this permission?');">
+                            <input type="hidden" name="document_id"
+                                   value="{{ permission.document_id }}">
+                            <input type="hidden" name="username"
+                                   value="{{ permission.username }}">
+                            <button class="button danger small" type="submit">
+                                Revoke
+                            </button>
+                        </form>
+                        {% else %}
+                            <span class="muted">View only</span>
+                        {% endif %}
+                    </td>
+                </tr>
+                {% else %}
+                <tr>
+                    <td colspan="5" class="muted">
+                        No permissions have been granted for your documents.
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+</section>
+
+<section class="panel">
+    <div class="panel-heading">
+        <div>
+            <h2>Your documents</h2>
+            <p class="muted">Documents you own.</p>
+        </div>
+    </div>
+
+    <div class="table-scroll">
+        <table>
+            <thead>
+                <tr>
+                    <th>DOCUMENT</th>
+                    <th>CATEGORY</th>
+                    <th>OWNER</th>
+                    <th>STATUS</th>
+                    <th>ACTION</th>
+                </tr>
+            </thead>
+
+            <tbody>
+                {% for document in documents %}
+                <tr>
+                    <td>{{ document.name }}</td>
+                    <td>{{ document.category }}</td>
+                    <td>{{ user.username }}</td>
+                    <td>
+                        <span class="badge green">{{ document.status }}</span>
+                    </td>
+                    <td>
+                        <a href="/documents/{{ document.id }}"
+                           class="button primary small">Open</a>
+                    </td>
+                </tr>
+                {% else %}
+                <tr>
+                    <td colspan="5" class="muted">
+                        You do not own any documents yet.
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+</section>
+
+{% if can_manage %}
+<section class="panel grant-panel">
+    <h2>Grant new access</h2>
+    <p class="muted">Select a document, registered user and permission.</p>
+
+    <form class="grant-form" method="POST"
+          action="/admin/permissions/grant">
+
+        <label>
+            Document
+            <select name="document_id" required>
+                <option value="">Select document</option>
+                {% for document in documents %}
+                <option value="{{ document.id }}">
+                    {{ document.name }}
+                </option>
+                {% endfor %}
+            </select>
+        </label>
+
+        <label>
+            Registered user
+            <select name="username" required>
+                <option value="">Select user</option>
+                {% for person in users %}
+                <option value="{{ person.username }}">
+                    {{ person.name }} ({{ person.username }})
+                </option>
+                {% endfor %}
+            </select>
+        </label>
+
+        <label>
+            Permission
+            <select name="access" required>
+                <option value="READ">READ</option>
+                <option value="EDIT">EDIT</option>
+            </select>
+        </label>
+
+        <button class="button primary" type="submit">
+            Grant access
+        </button>
+    </form>
+</section>
+{% else %}
+<section class="panel">
+    <h2>Permission management is restricted</h2>
+    <p class="muted">
+        Your account has view-only access. Document owners can grant or revoke permissions.
+    </p>
+</section>
+{% endif %}
+
+{% endblock %}

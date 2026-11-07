@@ -1,0 +1,44 @@
+
+{% extends "base.html" %}
+
+{% block title %}Profile | TrustVault{% endblock %}
+{% block breadcrumb %}Profile settings{% endblock %}
+
+{% block content %}
+
+<div class="page-heading">
+    <div>
+        <p class="eyebrow">ACCOUNT</p>
+        <h1>Profile settings</h1>
+        <p class="muted">Your account details and preferences.</p>
+    </div>
+</div>
+
+<section class="panel profile-card">
+
+    <div class="profile-avatar">
+        {{ profile.name[0]|upper if profile.name else profile.username[0]|upper }}
+    </div>
+
+    <div>
+        <h2>{{ profile.name }}</h2>
+        <p class="muted">{{ profile.username }}</p>
+
+        <span class="badge blue">
+            {{ profile.role|replace('_', ' ')|title }}
+        </span>
+    </div>
+
+    <hr>
+
+    <div>
+        <p><strong>Account ID:</strong> {{ profile.id }}</p>
+        <p><strong>Full name:</strong> {{ profile.name }}</p>
+        <p><strong>Username:</strong> {{ profile.username }}</p>
+        <p><strong>Account role:</strong> {{ profile.role|replace('_', ' ')|title }}</p>
+        <p><strong>Created:</strong> {{ profile.created_at }}</p>
+    </div>
+
+</section>
+
+{% endblock %}

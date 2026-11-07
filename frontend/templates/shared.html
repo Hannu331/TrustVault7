@@ -1,0 +1,72 @@
+{% extends "base.html" %}
+
+{% block title %}Shared with me | TrustVault{% endblock %}
+{% block breadcrumb %}Shared with me{% endblock %}
+
+{% block content %}
+
+<div class="page-heading">
+  <div>
+    <p class="eyebrow">SHARED WORKSPACE</p>
+    <h1>Shared with me</h1>
+    <p class="muted">Documents other users have shared with you.</p>
+  </div>
+</div>
+
+<section class="panel">
+
+  <div class="toolbar">
+    <input
+      id="documentSearch"
+      class="search"
+      placeholder="Search shared documents..."
+      aria-label="Search shared documents"
+    >
+  </div>
+
+  <div class="table-scroll">
+    <table id="documentsTable">
+      <thead>
+        <tr>
+          <th>DOCUMENT</th>
+          <th>OWNER</th>
+          <th>CATEGORY</th>
+          <th>YOUR ACCESS</th>
+          <th>ACTION</th>
+        </tr>
+      </thead>
+
+      <tbody>
+        {% for document in documents %}
+        <tr>
+          <td><b>{{ document.name }}</b></td>
+          <td>{{ document.owner_username }}</td>
+          <td>{{ document.category }}</td>
+          <td>
+            {% if document.shared_access == 'EDIT' %}
+              <span class="badge blue">EDIT</span>
+            {% else %}
+              <span class="badge green">READ</span>
+            {% endif %}
+          </td>
+          <td>
+            <a class="button secondary"
+               href="/documents/{{ document.id }}">
+              Open
+            </a>
+          </td>
+        </tr>
+        {% else %}
+        <tr>
+          <td colspan="5" class="muted">
+            No documents have been shared with you yet.
+          </td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+
+</section>
+
+{% endblock %}

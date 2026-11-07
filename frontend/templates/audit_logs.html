@@ -1,0 +1,96 @@
+{% extends "base.html" %}
+
+{% block title %}Audit trail | TrustVault{% endblock %}
+{% block breadcrumb %}Audit trail{% endblock %}
+
+{% block content %}
+
+<div class="page-heading">
+    <div>
+        <p class="eyebrow">ACCOUNTABILITY</p>
+        <h1>Audit trail</h1>
+        <p class="muted">A record of your account activity and denied attempts.</p>
+    </div>
+
+    <button class="button secondary" onclick="window.print()">
+        Print view
+    </button>
+</div>
+
+<div class="stats-grid three-stats">
+    <article class="stat-card">
+        <span>Total events</span>
+        <strong>{{ total_events }}</strong>
+        <small>Recorded actions</small>
+    </article>
+
+    <article class="stat-card">
+        <span>Successful</span>
+        <strong>{{ successful_count }}</strong>
+        <small>Recorded successful actions</small>
+    </article>
+
+    <article class="stat-card">
+        <span>Denied attempts</span>
+        <strong>{{ denied_count }}</strong>
+        <small>Failed or blocked actions</small>
+    </article>
+</div>
+
+<section class="panel">
+    <div class="toolbar">
+        <input
+            id="auditSearch"
+            class="search"
+            placeholder="Search activity..."
+            aria-label="Search activity"
+        >
+    </div>
+
+    <div class="table-scroll">
+        <table id="auditTable">
+            <thead>
+                <tr>
+                    <th>TIME</th>
+                    <th>ACTOR</th>
+                    <th>EVENT</th>
+                    <th>TARGET</th>
+                    <th>DETAILS</th>
+                    <th>RESULT</th>
+                </tr>
+            </thead>
+
+            <tbody>
+                {% for event in audit_logs %}
+                <tr>
+                    <td>{{ event.timestamp }}</td>
+                    <td>{{ event.actor }}</td>
+                    <td>{{ event.action }}</td>
+                    <td>{{ event.target }}</td>
+                    <td>{{ event.details }}</td>
+                    <td>
+                        {% if 'DENIED' in event.action.upper()
+                              or 'FAILED' in event.action.upper() %}
+                            <span class="badge red">Denied</span>
+                        {% else %}
+                            <span class="badge green">Recorded</span>
+                        {% endif %}
+                    </td>
+                </tr>
+                {% else %}
+                <tr>
+                    <td colspan="6" class="muted">
+                        No audit events have been recorded yet.
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+</section>
+
+<p class="warning-note">
+    Audit logs should be append-only. Normal users must not be able to update or delete them.
+</p>
+
+{% endblock %}

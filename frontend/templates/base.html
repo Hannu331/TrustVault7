@@ -1,0 +1,67 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>{% block title %}TrustVault{% endblock %}</title>
+
+  <link rel="stylesheet" href="{{ url_for('static', path='css/style.css') }}">
+  {% block extra_head %}{% endblock %}
+
+  <script defer src="{{ url_for('static', path='js/app.js') }}"></script>
+  {% block page_scripts %}{% endblock %}
+</head>
+<body>
+<div class="layout">
+  <aside class="sidebar" id="sidebar">
+    <a class="brand" href="/dashboard">
+      <span class="brand-mark">T</span>
+      <span>TrustVault<small>SECURE WORKSPACE</small></span>
+    </a>
+
+    <p class="nav-caption">WORKSPACE</p>
+
+    <nav>
+      <a class="nav-link" href="/dashboard">▦ <span>Overview</span></a>
+      <a class="nav-link" href="/documents">▤ <span>My documents</span></a>
+      <a class="nav-link" href="/shared">⇄ <span>Shared with me</span></a>
+      <a class="nav-link" href="/permissions">♙ <span>Access management</span></a>
+      <a class="nav-link" href="/audit">◷ <span>Audit trail</span></a>
+    </nav>
+
+    <div class="sidebar-bottom">
+      <div class="security-card">
+        <b>✓ Security first</b>
+        <p>Every document request must be checked by the server.</p>
+      </div>
+
+      <a class="nav-link" href="/profile">⚙ <span>Profile settings</span></a>
+      <a class="nav-link" href="/logout">↪ <span>Sign out</span></a>
+    </div>
+  </aside>
+
+  <main class="main">
+    <header class="topbar">
+      <button class="menu-toggle" id="menuToggle" aria-label="Toggle navigation">☰</button>
+
+      <div class="crumb">
+        Workspace <span>/</span> {% block breadcrumb %}Overview{% endblock %}
+      </div>
+
+      <div class="top-right">
+        <span class="secure-pill"><i></i> Protected workspace</span>
+        <span class="user-avatar">V</span>
+      </div>
+    </header>
+
+    <section class="content">
+      {% block content %}{% endblock %}
+    </section>
+
+    <footer class="footer">
+      TrustVault · Secure document sharing 
+    </footer>
+  </main>
+</div>
+</body>
+</html>

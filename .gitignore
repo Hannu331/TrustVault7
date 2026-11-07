@@ -1,5 +1,7 @@
-data/
 __pycache__/
+*.pyc
 .venv/
-.pytest_cache/
-evaluator-credentials*.txt
+.env
+data/*.db
+uploads/*
+!uploads/.gitkeep
