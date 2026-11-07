@@ -17,7 +17,12 @@ You are helping build TrustVault (FastAPI + SQLite). Rules for every change:
 - **What was wrong:** the first run showed 2 of 5 mutations *survived*: removing the `role != "admin"` exclusion in `authorize()` and removing `AND u.active=1` from the session query broke nothing. The tests looked thorough but each of those checks was masked by another layer (admin owns nothing and has no grants; disabling a user also deleted their sessions). A third survivor persisted after my first fix, because my "promoted owner" test was still covered by `is_owner` requiring role=owner; only a stale *grant* on a promoted admin isolates it.
 - **What I did instead:** added three tests that bypass the masking layer (set the DB flag directly without deleting sessions; promote a user who holds a stale grant). All 5 mutations now caught. Commit: `<link>`
 
-## Entry 2: YYYY-MM-DD (audit trail) , TEMPLATE
+## Entry 2: 2026-11-04 (audit trail and access control, second review)
+- **Asked:** re-check the finished system against every line of the problem statement, twice, and fix gaps.
+- **Produced:** a first build that I had described as complete, with 27 passing tests.
+- **What was wrong:** probing it showed (a) `current_user` raised 401 with no audit record, so an unauthenticated attempt on a document left no evidence, and `require_role` returned 403 with no record either, although the brief says refused attempts must be provable; (b) `GET /api/documents/99999999999999999999` returned a 500 (SQLite integer overflow); (c) `/docs` and `/openapi.json` were public; (d) deleting the newest audit rows left `verify_chain` returning valid, because a chain cannot show missing tail records. The AI's own tests had passed for all four.
+- **What I did instead:** audit in both dependencies, bounded path ids, disabled the docs routes, added anchor verification, with a test for each and 5 more mutations. Commit: `<link>`
+
 - **Asked:** 
 - **Produced:** 
 - **What was wrong (specific, quote the line):** 
