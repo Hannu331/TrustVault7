@@ -559,3 +559,47 @@ def test_backup_contains_database_and_files(env, tmp_path):
     with tarfile.open(backup.run(tmp_path / "out")) as tar:
         names = tar.getnames()
     assert "trustvault.db" in names and any(n.startswith("blobs/") and len(n) > 10 for n in names)
+
+
+def test_evaluation_account_can_skip_forced_password_change(env):
+    body = {
+        "username": "reviewer",
+        "password": "Shared-secret-123",
+        "role": "viewer",
+        "require_password_change": False,
+    }
+    assert env.c.post("/api/admin/users", headers=env.h("admin"), json=body).status_code == 201
+    token = env.c.post(
+        "/api/auth/login", json={"username": "reviewer", "password": "Shared-secret-123"}
+    ).json()["token"]
+    h = {"Authorization": f"Bearer {token}"}
+    assert env.c.get("/api/auth/me", headers=h).json()["must_change_password"] is False
+    assert env.c.get("/api/documents", headers=h).status_code == 200
+
+
+def test_expired_account_cannot_sign_in_or_use_an_old_token(env):
+    body = {
+        "username": "temp.judge",
+        "password": "Judge-secret-123",
+        "role": "viewer",
+        "require_password_change": False,
+        "expires_in_days": 14,
+    }
+    assert env.c.post("/api/admin/users", headers=env.h("admin"), json=body).status_code == 201
+    login = {"username": "temp.judge", "password": "Judge-secret-123"}
+    token = env.c.post("/api/auth/login", json=login).json()["token"]
+    h = {"Authorization": f"Bearer {token}"}
+    assert env.c.get("/api/auth/me", headers=h).status_code == 200
+    c = db.connect()
+    c.execute(
+        "UPDATE users SET expires_at='2000-01-01T00:00:00.000000Z' WHERE username='temp.judge'"
+    )
+    assert (
+        env.c.get("/api/auth/me", headers=h).status_code == 401
+    )  # the old token dies with the account
+    assert env.c.post("/api/auth/login", json=login).status_code == 401
+    assert (
+        env.c.get("/api/admin/users", headers=env.h("admin"))
+        .json()[-1]["expires_at"]
+        .startswith("2000")
+    )

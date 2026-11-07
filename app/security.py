@@ -85,8 +85,9 @@ def current_user(request: Request, conn=Depends(db.get_db)):
         _refuse_unauthenticated(request, conn)
     row = conn.execute(
         "SELECT u.* FROM sessions s JOIN users u ON u.id=s.user_id "
-        "WHERE s.token_hash=? AND s.expires_at>? AND u.active=1",
-        (_th(header[7:]), db.now()),
+        "WHERE s.token_hash=? AND s.expires_at>? AND u.active=1 "
+        "AND (u.expires_at IS NULL OR u.expires_at>?)",
+        (_th(header[7:]), db.now(), db.now()),
     ).fetchone()
     if not row:
         _refuse_unauthenticated(request, conn)

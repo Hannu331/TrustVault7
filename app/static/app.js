@@ -229,7 +229,14 @@ async function documentsPage(main, kind) {
     h(
       "tr",
       {},
-      h("td", {}, h("button", { class: "link", onclick: safe(() => openDrawer(doc.id)) }, doc.name)),
+      h("td", {}, h("button", { class: "link", onclick: safe(async () => {
+          try {
+            await openDrawer(doc.id);
+          } catch (err) {
+            showPage(); // access may have been removed: refresh the list so the stale row disappears
+            throw err;
+          }
+        }) }, doc.name)),
       h("td", {}, doc.owner),
       h("td", {}, doc.category),
       h("td", {}, pill(doc.access)),
@@ -508,6 +515,12 @@ async function overviewPage(main) {
   );
 }
 
+// Builds the JSON for POST /admin/users from the form (the checkbox is a boolean, not a form field).
+function newUserPayload(form) {
+  const f = new FormData(form);
+  return { username: f.get("username"), password: f.get("password"), role: f.get("role"), require_password_change: form.elements.require.checked };
+}
+
 async function peoplePage(main) {
   const users = await getJson("/admin/users");
   const rows = users.map((u) =>
@@ -516,7 +529,7 @@ async function peoplePage(main) {
       {},
       h("td", {}, u.username),
       h("td", {}, u.role),
-      h("td", {}, u.active ? "Active" : "Disabled"),
+      h("td", {}, !u.active ? "Disabled" : u.expires_at ? "Active until " + u.expires_at.slice(0, 10) : "Active"),
       h(
         "td",
         {},
@@ -543,7 +556,7 @@ async function peoplePage(main) {
       class: "row",
       onsubmit: safe(async (event) => {
         event.preventDefault();
-        await api("/admin/users", { method: "POST", json: Object.fromEntries(new FormData(event.target)) });
+        await api("/admin/users", { method: "POST", json: newUserPayload(event.target) });
         toast("User created", true);
         showPage();
       }),
@@ -551,6 +564,7 @@ async function peoplePage(main) {
     h("input", { name: "username", placeholder: "Username", required: true }),
     h("input", { name: "password", type: "password", placeholder: "Password (10+ characters)", minlength: 10, required: true }),
     h("select", { name: "role", "aria-label": "Role" }, ["viewer", "owner", "admin"].map((r) => h("option", { value: r }, r))),
+    h("label", { class: "check" }, h("input", { type: "checkbox", name: "require", checked: true }), "Must choose own password at first sign-in"),
     h("button", { class: "btn" }, "Create user"),
   );
   main.replaceChildren(

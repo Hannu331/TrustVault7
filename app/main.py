@@ -1,6 +1,7 @@
 """TrustVault API. Authorisation: security.current_user (who) + authz.authorize (what)."""
 
 import hashlib, json, os, re
+from datetime import datetime, timedelta, timezone
 from contextlib import asynccontextmanager
 from typing import Annotated, Literal, Optional
 from fastapi import Depends, FastAPI, File, Form, HTTPException, Query, Request, UploadFile
@@ -73,7 +74,8 @@ def login(body: Login, request: Request, conn=Depends(db.get_db)):
     ok = security.verify_pw(
         body.password, u["pw_hash"] if u else security.DUMMY
     )  # constant work either way
-    if not (u and ok and u["active"]):
+    expired = bool(u and u["expires_at"] and u["expires_at"] <= db.now())
+    if not (u and ok and u["active"]) or expired:
         security.record_fail(ip, body.username)
         audit(
             conn,
@@ -438,6 +440,10 @@ class NewUser(Strict):
     username: str = Field(min_length=3, max_length=64, pattern=r"^[\w.\-]+$")
     password: str = Field(min_length=10, max_length=256)
     role: Literal["admin", "owner", "viewer"]
+    # True for staff (they choose their own password at first sign-in). False only for
+    # shared evaluation accounts, whose password the administrator controls.
+    require_password_change: bool = True
+    expires_in_days: Optional[int] = Field(None, ge=1, le=365)  # account stops working by itself
 
 
 class UserPatch(Strict):
@@ -450,16 +456,30 @@ class UserPatch(Strict):
 def list_users(user=Depends(admin), conn=Depends(db.get_db)):
     return [
         dict(r)
-        for r in conn.execute("SELECT id,username,role,active,created_at FROM users ORDER BY id")
+        for r in conn.execute(
+            "SELECT id,username,role,active,expires_at,created_at FROM users ORDER BY id"
+        )
     ]
 
 
 @app.post("/api/admin/users", status_code=201)
 def create_user(body: NewUser, user=Depends(admin), conn=Depends(db.get_db)):
+    expires_at = None
+    if body.expires_in_days:
+        expires_at = (datetime.now(timezone.utc) + timedelta(days=body.expires_in_days)).strftime(
+            "%Y-%m-%dT%H:%M:%S.%fZ"
+        )
     try:
         cur = conn.execute(
-            "INSERT INTO users(username,pw_hash,role,must_change_password,created_at) VALUES(?,?,?,1,?)",
-            (body.username, security.hash_pw(body.password), body.role, db.now()),
+            "INSERT INTO users(username,pw_hash,role,must_change_password,expires_at,created_at) VALUES(?,?,?,?,?,?)",
+            (
+                body.username,
+                security.hash_pw(body.password),
+                body.role,
+                int(body.require_password_change),
+                expires_at,
+                db.now(),
+            ),
         )
     except Exception:
         raise HTTPException(409, "Username already exists")

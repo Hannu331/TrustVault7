@@ -33,6 +33,8 @@ def init() -> None:
     columns = {row["name"] for row in c.execute("PRAGMA table_info(users)")}
     if "must_change_password" not in columns:  # database made before this column existed
         c.execute("ALTER TABLE users ADD COLUMN must_change_password INTEGER NOT NULL DEFAULT 0")
+    if "expires_at" not in columns:
+        c.execute("ALTER TABLE users ADD COLUMN expires_at TEXT")
     c.close()
 
 
