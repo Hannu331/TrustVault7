@@ -1,73 +1,83 @@
-# TrustVault — Secure Document Sharing
+# TrustVault
 
-TrustVault is a FastAPI + SQLite document-sharing application with a responsive Jinja2 interface.
-The backend is database-backed; the frontend is taken from the supplied `TrustVault-updated.zip` UI.
+Secure document sharing where the server decides every access and every attempt, allowed or refused, is recorded in a hash-chained audit trail.
+Python 3.12, FastAPI, SQLite, vanilla JS frontend served by the same app.
 
-## Implemented workflows
-
-- Account registration and login with password hashing.
-- A first administrator account created from environment variables on initial startup.
-- Private-by-default document uploads (PDF, DOC, DOCX, TXT and CSV; maximum 10 MB).
-- Owner dashboard, My Documents and Shared With Me views.
-- Per-document READ or EDIT grants to registered users; owners can change or revoke grants.
-- Admin views for registered accounts, all documents, permissions and audit events.
-- Server-side access checks on document detail, preview, download and edit endpoints.
-- TXT/CSV editing with version history. Other supported file types can be downloaded; browser editing is currently limited to TXT/CSV.
-- Audit events for login, upload, document access, download, edits and permission changes.
-
-No demo users, demo documents, pre-populated database or sample uploads are included. The SQLite database and upload directory are created empty on first run.
-
-## Requirements
-
-- Python 3.10+
-- pip
-
-## Setup (Windows PowerShell)
-
-```powershell
-python -m venv .venv
-.venv\Scripts\Activate.ps1
-pip install -r backend/requirements.txt
-Copy-Item .env.example .env
+## Run (clean clone)
+```bash
+python -m venv .venv && . .venv/bin/activate
+pip install -r requirements.txt
+python -m scripts.seed          # LOCAL TRYING ONLY: trial accounts and sample documents with published passwords. Never run on a real system
+uvicorn app.main:app --port 8000   # open http://localhost:8000
+pytest -q                        # 51 tests
+python -m scripts.mutation_check # breaks 15 security checks one at a time; every one must make a test fail
 ```
+Docker: `docker build -t trustvault . && docker run -p 8000:8000 -v tv:/data trustvault`
+Deploy: any host that runs the Dockerfile (Render, Fly, Railway). Mount a persistent volume at `/data`, put it behind HTTPS, and set `TV_PW_ADMIN`, `TV_PW_ALICE`, `TV_PW_BOB`, `TV_PW_VERA` before the first start to override the demo passwords. **Run one instance only** (see THREATS T20).
 
-Edit `.env` and set a long random `TRUSTVAULT_SECRET_KEY` and a strong `TRUSTVAULT_ADMIN_PASSWORD` before starting the server.
+Full requirements report with evidence: [REPORT.md](REPORT.md). Threats: [THREATS.md](THREATS.md). API: [docs/API.md](docs/API.md).
 
-## Run
+## Live system
+**URL: https://YOUR-LIVE-URL** (production deployment, HTTPS, persistent storage, no demo mode)
 
-From the project root:
+### Evaluation access
+This repository is public, so the evaluator **passwords are not published here**. They are supplied privately with the submission (a one-page file, `evaluator-credentials.txt`, generated on the owner's own computer). There is one account per role, with strong random passwords; they **switch off automatically** on the date stated in that file (default 14 days after provisioning), so a leaked login stops working by itself. Please do not change their passwords.
 
-```powershell
-python -m uvicorn backend.app.app.main:app --reload --port 8000
-```
+| Role | Username |
+|---|---|
+| Administrator | evaluator.admin |
+| Document owner | evaluator.owner |
+| Viewer | evaluator.viewer |
 
-Open `http://127.0.0.1:8000`. Register normal accounts at `/register`; sign in as the configured administrator at `/admin/login`.
+Seed data (created by `scripts/provision.py`, every kind of access): `company-handbook.txt` is sent by the administrator (owner can **edit**, viewer can **read**); `supplier-contract.txt` is owned by the evaluator owner and shared with the viewer (**edit**); `security-policy.txt` is owned by a second owner, `finance.owner`, and shared read-only with the viewer. `board-pack-q3.txt` and `salary-review-2026.txt` belong to `finance.owner` (nobody holds that password) and are **not** shared with any evaluator, so there are private documents to try to reach.
 
-The same command works on macOS/Linux after activating the virtual environment.
+Suggested first checks: as the viewer, try to open, edit, delete or find the two private Finance documents by any route; as the administrator, upload a file and send it to the viewer as read, upgrade it to edit, then remove it and use the viewer's already-open session; then read the refusals and the integrity banner on the administrator's Access list and Audit trail pages. A scripted version: `python -m scripts.live_check URL --admin U:P --owner U:P --viewer U:P` (40 checks).
 
-## Permission model
+## Permission model (in my words)
+Roles say what you may do in general. Grants say what you may do to one document. Three roles:
 
-| Action | Administrator | Owner | Shared user |
-|---|---:|---:|---:|
-| View all users/documents | Yes | No | No |
-| Upload | Yes | Yes | No |
-| Read own document | Yes | Yes | If READ or EDIT granted |
-| Edit TXT/CSV | Yes | Yes | If EDIT granted |
-| Share / change / revoke access | Yes | Own documents | No |
-| View all audit events | Yes | Own actor events | No |
+| | Administrator | Document owner | Viewer |
+|---|---|---|---|
+| Upload documents | yes | yes | no |
+| Send (share) own documents to any account, as **read** or **edit** | yes | yes | no |
+| Take access back from people on their own documents | yes | yes | no |
+| Read or edit documents someone shared with them | no (cannot be granted anything) | yes | yes (read or edit, as granted) |
+| Delete or share a document they were only given | no | no | no |
+| Open, edit, share or delete **other people's** documents | **never** | never | never |
+| Remove anyone's access to any document (for example when someone leaves) | yes, immediately, audited | own documents only | no |
+| See who has what access on every document, and every operation | yes (Access list, Audit trail) | activity on own documents | no |
+| Create, disable and reset accounts | yes | no | no |
 
-A normal registered account can own documents and can also receive documents shared by other accounts. Permissions are checked by the backend on every protected request; hiding a UI action is not treated as authorization.
+A document is reachable only if you uploaded it (as owner or administrator) or hold a grant on it. The **grant** is the right: `read` lets you read; `edit` lets you read and edit (rename, change category, replace the file). Owners and viewers can both receive either right; administrators never receive grants, so they cannot see content they did not upload. Authorisation is one function, `app/authz.py:authorize`, called by every document route, and search applies the same rule inside its SQL. Unauthorised and non-existent documents return the same `404`. Refusals are audited.
 
-## Storage and configuration
+## Revocation: what "immediately" means, and what it costs
+Sessions are opaque random tokens whose hashes are stored server-side; there are no JWTs and no signed download URLs. Every request re-reads the session, the user's active flag and role, and the grant from the database. Removing a grant, disabling a user or changing a role takes effect on the very next request; disabling or changing a user also deletes all their sessions. Cost: one or two small DB reads per request, and no horizontal scaling without a shared DB. Not revocable: bytes a person already downloaded.
 
-- SQLite database: `backend/data/trustvault.db` (created automatically)
-- Private uploads: `backend/uploads/` (not mounted as public static files)
-- Configuration: project-root `.env` (never commit it)
-- Health endpoint: `/health`
+## Audit trail
+Append-only table (SQLite triggers reject UPDATE/DELETE) where each record contains the SHA-256 of the previous one. Someone with raw database access could drop the triggers, but editing or deleting any row then breaks the chain, which the admin page verifies (`/api/admin/audit/verify`, tested). The chain alone cannot see the newest records being deleted, so the admin page shows a fingerprint (latest record number and hash). Save it outside the system (email it to yourself daily); checking it later detects deleted tail records (tested). Still not stopped: someone who recomputes every hash AND the saved fingerprint was never kept (THREATS A1).
 
-Back up the database and uploads together. For production deployment, use HTTPS, a strong unique session secret, secure cookie settings, restricted filesystem permissions, database backups and a production ASGI server configuration.
+## Operations (real deployment)
+Production is the default. `TV_DEMO=1` exists only for local trials. Provisioning a new production system: set the variables below, deploy, then run `python -m scripts.provision https://YOUR-URL [days]` from your own computer (it asks for your admin login, writes the evaluator passwords to a git-ignored local file, and sets them to expire). Settings:
 
-## Notes
+| Setting | Judge demo | Real app |
+|---|---|---|
+| `TV_DEMO` | `1` (creates the demo users and documents above) | unset (nothing with a published password is ever created) |
+| `TV_ADMIN_USER`, `TV_ADMIN_PASSWORD` | not needed | your admin's login; password 12+ characters, set only in the host's secret settings, never in git |
+| `TV_DB`, `TV_STORE` | `/data/trustvault.db`, `/data/blobs` on a persistent disk | same |
 
-- Existing data from the supplied ZIP was intentionally excluded so the delivered project starts without demo records. Keep a separate backup of your original ZIP if you need that data.
-- The UI includes document preview/download; DOC/DOCX browser preview and editing are not provided by the current backend. TXT/CSV editing creates a new stored version.
+`python -m scripts.bootstrap` runs at every start (see `Dockerfile`): upgrades the database, creates the first administrator only if none exists, seeds demo data only when `TV_DEMO=1`, and fails the deployment loudly if no administrator could be created.
+Accounts created or reset by an administrator carry a temporary password and can do nothing but change it on first sign-in (`must_change_password`).
+**Backups:** `python -m scripts.backup` writes a consistent `trustvault-<time>.tar.gz` (database snapshot plus files). It holds documents unencrypted: store it privately and test a restore.
+**Single instance only** (login lockout counters are in memory) and HTTPS must be provided by the host.
+
+## Project layout
+`app/` API code (`authz.py` is the single access decision, `security.py` sessions and roles, `db.py` audit chain, `files.py` upload checks) · `app/static/` frontend · `db/schema.sql` database schema · `scripts/seed.py` setup · `tests/` · `docs/API.md` · `THREATS.md` · `PROMPTS.md`.
+
+## Not built (deliberately)
+Groups and folder inheritance (every inherited permission is another place to leak; per-document grants are easy to reason about and test); external/guest sharing; versions history and restore UI (soft delete exists, blobs kept); retention policies; MFA; the optional AI "who should see this" assistant (would have to be suggest-only with the suggestion and the decision audited; skipped to keep the permission core small); malware scanning; encryption at rest.
+
+## Unfinished / honest gaps
+See THREATS.md "Accepted". Highest: administrator can reset a user's password and so impersonate them (audited, not prevented); no ownership transfer when an owner is demoted; single-instance login throttle.
+
+## How I used AI
+Claude wrote most of the first draft; I used a reusable rules file and a mutation script to check it. Where it was wrong (tests that passed without testing an authorisation check, refusals that were not recorded, a crash on a huge id, API docs left public, a chain that could not see deleted newest records) is logged in `PROMPTS.md` with the fixing commits.
