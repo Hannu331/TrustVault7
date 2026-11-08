@@ -7,7 +7,7 @@ I built it for the RISE "TrustVault" challenge. It uses Python, FastAPI, SQLite 
 
 ## Try it
 
-**Live site:** https://trustvault7.onrender.com
+**Live site:** https://trustvault7-1.onrender.com
 It's on free hosting, so the first page load can take about a minute while it wakes up.
 
 **Demo accounts.** The passwords are public on purpose, because this is a demo.
