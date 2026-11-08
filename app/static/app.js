@@ -95,8 +95,6 @@ const pageHead = (title, sub) => h("div", { class: "page-head" }, h("h1", {}, ti
 
 /* ------------------------------------------------------------------ sign in / out */
 
-const DEMO_USERS = ["admin", "alice", "bob", "vera"];
-
 const ROLE_CHOICES = [
   ["viewer", "Viewer: read what's shared with me"],
   ["owner", "Owner: upload and share documents"],
@@ -153,8 +151,7 @@ function showSignupSent(username) {
   ]);
 }
 
-async function showLogin() {
-  const config = await fetch("/api/config").then((r) => r.json()).catch(() => ({ demo: false }));
+function showLogin() {
   const username = h("input", { name: "u", required: true, autocomplete: "username" });
   const password = h("input", { name: "p", type: "password", required: true, autocomplete: "current-password" });
   const form = h(
@@ -164,19 +161,10 @@ async function showLogin() {
     h("label", {}, "Password", password),
     h("button", { class: "btn" }, "Sign in"),
   );
-  const demo = !config.demo ? null : h(
-    "div",
-    { class: "demo" },
-    "Demo accounts:",
-    DEMO_USERS.map((name) =>
-      h("button", { type: "button", class: "btn ghost", onclick: () => { username.value = name; password.value = name + "-Demo-2026!"; } }, name),
-    ),
-  );
   loginLayout([
     h("h2", {}, "Sign in"),
     form,
     h("p", { class: "sub" }, "New here? ", h("button", { type: "button", class: "link", onclick: showSignup }, "Create an account")),
-    demo,
   ]);
 }
 

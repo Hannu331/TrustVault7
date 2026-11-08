@@ -97,7 +97,6 @@ button.link { background: none; border: 0; padding: 0; color: inherit; text-deco
 .login-form { display: flex; flex-direction: column; justify-content: center; padding: clamp(2rem, 6vw, 5rem); gap: 1rem; max-width: 460px; }
 .login-form form { display: grid; gap: .8rem; }
 .login-form label { display: grid; gap: .25rem; font-weight: 600; font-size: .9rem; }
-.demo { display: flex; flex-wrap: wrap; gap: .4rem; align-items: center; color: var(--muted); font-size: .85rem; }
 
 #toast { position: fixed; bottom: 1.2rem; left: 50%; transform: translateX(-50%); padding: .6rem 1.1rem; border-radius: 8px; color: #fff; font-weight: 600; display: none; z-index: 10; max-width: 90vw; }
 #toast.show { display: block; } #toast.good { background: var(--pine); } #toast.bad { background: var(--red); }
