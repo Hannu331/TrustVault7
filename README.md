@@ -12,7 +12,7 @@ I built it for the RISE "TrustVault" challenge. It uses Python, FastAPI, SQLite 
 It's on free hosting, so the first page load can take about a minute while it wakes up.
 
 
-**DEMO LINK : https://drive.google.com/file/d/1nkOT1y8setIiFE40JGM57qQd99dpn3Bu/view?usp=drive_link
+**DEMO LINK : https://drive.google.com/file/d/1kV72FZ8vXo4CZvj3_p2_WhlBUocmWhFq/view?usp=drive_link
 
 
 **Demo accounts.** The passwords are public on purpose, because this is a demo.
